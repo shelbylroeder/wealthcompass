@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WealthCompass Lite — Free FIRE Calculator</title>
+<meta name="description" content="Free financial independence calculator. Find your FIRE number, CoastFIRE target, LeanFIRE & FatFIRE milestones, and your path to $1M.">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0b0b12;--surface:#101018;--card:#15151e;--card2:#1a1a26;
+  --border:#21212e;--border2:#1a1a24;
+  --gold:#c9a84c;--gold2:#e4c46a;--gold3:#9a7a35;
+  --text:#ede8e0;--text2:#7e7e92;--text3:#4a4a5a;
+  --green:#52c78a;--green2:rgba(82,199,138,0.15);
+  --red:#e06060;--blue:#5a9ae0;--blue2:rgba(90,154,224,0.15);
+  --purple:#9a7ae0;--purple2:rgba(154,122,224,0.15);
+  --orange:#e09a5a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font-weight:300;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden}
+
+/* UPGRADE BANNER */
+.upgrade-banner{background:linear-gradient(90deg,#17120a,#1e180a,#17120a);border-bottom:1px solid var(--gold3);padding:10px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:12px}
+.ub-left{display:flex;align-items:center;gap:10px}
+.ub-badge{background:rgba(201,168,76,.15);border:1px solid var(--gold3);border-radius:20px;padding:2px 9px;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);white-space:nowrap}
+.ub-text{font-size:12px;color:var(--text2)}
+.ub-text strong{color:var(--text);font-weight:500}
+.ub-btn{background:linear-gradient(135deg,var(--gold3),var(--gold));color:#0b0b12;font-family:'Outfit',sans-serif;font-weight:600;font-size:11px;letter-spacing:.08em;padding:7px 18px;border-radius:20px;border:none;cursor:pointer;white-space:nowrap;text-decoration:none;display:inline-block;transition:opacity .2s}
+.ub-btn:hover{opacity:.85}
+
+/* LAYOUT */
+.app{display:flex;flex:1;overflow:hidden;height:calc(100vh - 41px)}
+.sidebar{width:280px;min-width:280px;background:var(--surface);border-right:1px solid var(--border);height:100%;overflow-y:auto;display:flex;flex-direction:column}
+.sidebar::-webkit-scrollbar{width:4px}.sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.s-head{padding:20px 18px 14px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:5}
+.logo{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:600;color:var(--gold);letter-spacing:.04em}
+.logo em{color:var(--text);font-style:normal}
+.logo-badge{display:inline-block;background:rgba(90,154,224,.15);border:1px solid var(--blue);border-radius:10px;padding:1px 7px;font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);margin-left:6px;vertical-align:middle}
+.logo-sub{font-size:10px;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;margin-top:3px}
+.s-body{padding:14px 18px 40px;flex:1}
+.ig{margin-bottom:18px}
+.ig-title{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold3);margin-bottom:9px;padding-bottom:4px;border-bottom:1px solid var(--border2)}
+.ir{margin-bottom:7px}
+.ir label{display:block;font-size:11px;color:var(--text2);margin-bottom:3px}
+.ir input[type=number]{background:#0c0c14;border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;width:100%;outline:none;transition:border-color .2s;-moz-appearance:textfield}
+.ir input[type=number]::-webkit-outer-spin-button,.ir input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+.ir input[type=number]:focus{border-color:var(--gold3)}
+.ir-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.range-wrap{display:flex;align-items:center;gap:8px}
+.range-wrap input[type=range]{flex:1;height:3px;background:var(--border);border:none;border-radius:2px;outline:none;accent-color:var(--gold);cursor:pointer;padding:0}
+.range-val{font-family:'DM Mono',monospace;font-size:12px;color:var(--gold);min-width:36px;text-align:right}
+input[type=range]{-webkit-appearance:none;appearance:none;height:3px;border-radius:2px;outline:none;cursor:pointer;background:var(--border)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--gold);cursor:pointer;border:2px solid var(--bg)}
+
+/* LOCKED INPUTS */
+.locked-section{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;margin-top:8px;text-align:center}
+.ls-icon{font-size:20px;margin-bottom:4px}
+.ls-title{font-size:11px;font-weight:500;color:var(--text2);margin-bottom:3px}
+.ls-desc{font-size:10px;color:var(--text3);line-height:1.5;margin-bottom:10px}
+.ls-features{text-align:left;margin-bottom:10px}
+.ls-feat{font-size:10px;color:var(--text3);padding:2px 0;display:flex;align-items:center;gap:5px}
+.ls-feat::before{content:'✦';color:var(--gold3);font-size:8px}
+.ls-btn{background:linear-gradient(135deg,var(--gold3),var(--gold));color:#0b0b12;font-family:'Outfit',sans-serif;font-weight:600;font-size:10px;letter-spacing:.08em;padding:6px 14px;border-radius:16px;border:none;cursor:pointer;width:100%;text-decoration:none;display:block;transition:opacity .2s}
+.ls-btn:hover{opacity:.85}
+
+/* MAIN */
+.main{flex:1;height:100%;overflow-y:auto;display:flex;flex-direction:column}
+.main::-webkit-scrollbar{width:6px}.main::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.m-head{padding:20px 32px 16px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0}
+.m-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;letter-spacing:-.01em;line-height:1}
+.m-title em{color:var(--gold);font-style:italic}
+.m-sub{font-size:11px;color:var(--text3);margin-top:4px}
+.nw-hero{text-align:right}
+.nw-lbl{font-size:9px;color:var(--text3);letter-spacing:.14em;text-transform:uppercase}
+.nw-val{font-family:'DM Mono',monospace;font-size:26px;font-weight:500;color:var(--green);line-height:1;margin-top:2px}
+.nw-sub{font-size:10px;color:var(--text3);margin-top:2px}
+.tabs{display:flex;padding:0 32px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0}
+.tab{padding:11px 14px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
+.tab:hover{color:var(--text2)}.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.section{display:none;padding:24px 32px 48px;flex:1}
+.section.active{display:block}
+.sh{margin-bottom:20px}
+.sh-title{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:400;margin-bottom:2px}
+.sh-desc{font-size:11px;color:var(--text3);letter-spacing:.04em}
+.cg{display:grid;gap:12px;margin-bottom:16px}
+.cg-4{grid-template-columns:repeat(4,1fr)}.cg-3{grid-template-columns:repeat(3,1fr)}.cg-2{grid-template-columns:repeat(2,1fr)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
+.card.glow{border-color:var(--gold3);background:linear-gradient(135deg,#17171e,#15130d)}
+.c-lbl{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);margin-bottom:7px}
+.c-val{font-family:'DM Mono',monospace;font-size:19px;font-weight:500;letter-spacing:-.01em}
+.c-val.gold{color:var(--gold)}.c-val.green{color:var(--green)}.c-val.blue{color:var(--blue)}.c-val.purple{color:var(--purple)}.c-val.orange{color:var(--orange)}
+.c-sub{font-size:10px;color:var(--text3);margin-top:3px}
+.prog-bar{background:var(--border2);border-radius:4px;height:6px;overflow:hidden;margin:6px 0 3px}
+.prog-fill{height:100%;border-radius:4px;transition:width .5s ease}
+.prog-fill.gold{background:linear-gradient(90deg,var(--gold3),var(--gold))}
+.prog-fill.green{background:linear-gradient(90deg,#2a6345,var(--green))}
+.prog-fill.blue{background:linear-gradient(90deg,#2a4a7a,var(--blue))}
+.prog-fill.purple{background:linear-gradient(90deg,#3a2a7a,var(--purple))}
+.prog-fill.orange{background:linear-gradient(90deg,#7a3a10,var(--orange))}
+.full-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:14px}
+.fi-big{font-family:'DM Mono',monospace;font-size:40px;font-weight:500;color:var(--gold);letter-spacing:-.03em;line-height:1}
+.fi-of{font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--text2);font-style:italic;margin-top:2px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:14px}
+.cw-title{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;margin-bottom:1px}
+.cw-sub{font-size:10px;color:var(--text3);margin-bottom:14px}
+.mc{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;position:relative;overflow:hidden}
+.mc::after{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.mc.coast::after{background:var(--blue)}.mc.lean::after{background:var(--green)}.mc.fire::after{background:var(--gold)}.mc.fat::after{background:var(--purple)}
+.m-badge{display:inline-block;font-size:8px;letter-spacing:.16em;text-transform:uppercase;padding:3px 7px;border-radius:20px;margin-bottom:9px;font-weight:500}
+.coast .m-badge{background:var(--blue2);color:var(--blue)}.lean .m-badge{background:var(--green2);color:var(--green)}.fire .m-badge{background:rgba(201,168,76,.12);color:var(--gold)}.fat .m-badge{background:var(--purple2);color:var(--purple)}
+.m-amt{font-family:'DM Mono',monospace;font-size:22px;font-weight:500;letter-spacing:-.02em;margin-bottom:5px}
+.coast .m-amt{color:var(--blue)}.lean .m-amt{color:var(--green)}.fire .m-amt{color:var(--gold)}.fat .m-amt{color:var(--purple)}
+.m-desc{font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:9px}
+.m-eta{font-size:10px;color:var(--text3)}.m-eta strong{color:var(--text);font-weight:500}
+.achieved-tag{display:inline-flex;align-items:center;gap:4px;font-size:9px;letter-spacing:.12em;text-transform:uppercase;padding:3px 7px;border-radius:20px;background:var(--green2);color:var(--green);font-weight:500}
+
+/* MILESTONE ITEMS */
+.mile-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border2)}
+.mile-item:last-child{border-bottom:none}
+.mile-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.mile-info{flex:1}
+.mile-label{font-size:12px;color:var(--text2)}
+.mile-age{font-family:'DM Mono',monospace;font-size:13px;font-weight:500}
+.mile-yr{font-size:10px;color:var(--text3)}
+
+/* LOCKED SECTION IN TAB */
+.tab-locked{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:28px;text-align:center;margin-top:16px}
+.tl-icon{font-size:32px;margin-bottom:10px}
+.tl-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:400;margin-bottom:6px}
+.tl-desc{font-size:12px;color:var(--text2);line-height:1.7;max-width:480px;margin:0 auto 18px}
+.tl-features{display:grid;grid-template-columns:1fr 1fr;gap:6px;max-width:440px;margin:0 auto 20px;text-align:left}
+.tl-feat{font-size:11px;color:var(--text2);display:flex;align-items:flex-start;gap:6px;padding:4px 0}
+.tl-feat-icon{color:var(--gold);font-size:12px;margin-top:1px}
+.tl-btn{background:linear-gradient(135deg,var(--gold3),var(--gold));color:#0b0b12;font-family:'Outfit',sans-serif;font-weight:600;font-size:12px;letter-spacing:.06em;padding:10px 28px;border-radius:24px;border:none;cursor:pointer;text-decoration:none;display:inline-block;transition:opacity .2s}
+.tl-btn:hover{opacity:.85}
+.tl-price{font-size:10px;color:var(--text3);margin-top:8px}
+</style>
+</head>
+<body>
+
+<!-- UPGRADE BANNER -->
+<div class="upgrade-banner">
+  <div class="ub-left">
+    <span class="ub-badge">Free Version</span>
+    <span class="ub-text"><strong>Unlock the full WealthCompass</strong> — net worth tracker, home equity, mortgage analysis, optimizer & 7-scenario comparison</span>
+  </div>
+  <a href="YOUR_GUMROAD_OR_ETSY_LINK_HERE" target="_blank" class="ub-btn">Upgrade — $9</a>
+</div>
+
+<div class="app">
+<aside class="sidebar">
+  <div class="s-head">
+    <div class="logo">Wealth<em>Compass</em> <span class="logo-badge">Lite</span></div>
+    <div class="logo-sub">Free FIRE Calculator</div>
+  </div>
+  <div class="s-body">
+    <div class="ig">
+      <div class="ig-title">👤 Personal</div>
+      <div class="ir-row">
+        <div class="ir"><label>Current Age</label><input type="number" id="i-age" value="28" min="18" max="70"></div>
+        <div class="ir"><label>Retirement Age</label><input type="number" id="i-ret" value="65" min="40" max="80"></div>
+      </div>
+    </div>
+    <div class="ig">
+      <div class="ig-title">💰 Income &amp; Expenses</div>
+      <div class="ir"><label>Annual Income ($)</label><input type="number" id="i-income" value="90000" step="1000"></div>
+      <div class="ir"><label>Annual Expenses ($)</label><input type="number" id="i-exp" value="52000" step="500"></div>
+      <div class="ir"><label>Lean FI Expenses ($/yr)</label><input type="number" id="i-lean" value="36000" step="500"></div>
+    </div>
+    <div class="ig">
+      <div class="ig-title">📈 Investments</div>
+      <div class="ir"><label>Current Portfolio ($)</label><input type="number" id="i-port" value="69000" step="500"></div>
+      <div class="ir"><label>Annual Savings ($)</label><input type="number" id="i-save" value="15000" step="500"></div>
+      <div class="ir"><label>401(k) Contrib (%)</label>
+        <div class="range-wrap"><input type="range" id="i-401pct" min="0" max="23" value="6" step="0.5"><span class="range-val" id="rv-401pct">6%</span></div>
+      </div>
+      <div class="ir"><label>Employer Match (%)</label>
+        <div class="range-wrap"><input type="range" id="i-match" min="0" max="10" value="3" step="0.5"><span class="range-val" id="rv-match">3%</span></div>
+      </div>
+    </div>
+    <div class="ig">
+      <div class="ig-title">⚙️ Assumptions</div>
+      <div class="ir"><label>Expected Return (%)</label>
+        <div class="range-wrap"><input type="range" id="i-ret2" min="1" max="15" value="7" step="0.5"><span class="range-val" id="rv-ret2">7%</span></div>
+      </div>
+      <div class="ir"><label>Inflation (%)</label>
+        <div class="range-wrap"><input type="range" id="i-inf" min="1" max="8" value="3" step="0.25"><span class="range-val" id="rv-inf">3%</span></div>
+      </div>
+    </div>
+
+    <!-- LOCKED SECTION -->
+    <div class="locked-section">
+      <div class="ls-icon">🔒</div>
+      <div class="ls-title">Full Version Inputs</div>
+      <div class="ls-desc">Unlock home equity, mortgage tracking &amp; debt analysis</div>
+      <div class="ls-features">
+        <div class="ls-feat">Home value &amp; appreciation</div>
+        <div class="ls-feat">Mortgage balance &amp; rate</div>
+        <div class="ls-feat">Other debts tracker</div>
+        <div class="ls-feat">Roth IRA vs 401k split</div>
+      </div>
+      <a href="YOUR_GUMROAD_OR_ETSY_LINK_HERE" target="_blank" class="ls-btn">Get Full Version →</a>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="m-head">
+    <div>
+      <div class="m-title">Your <em>FIRE</em> Calculator</div>
+      <div class="m-sub">Adjust any input to update all projections in real time</div>
+    </div>
+    <div class="nw-hero">
+      <div class="nw-lbl">FIRE Number</div>
+      <div class="nw-val" id="h-fire">$0</div>
+      <div class="nw-sub" id="h-fire-sub">25× annual expenses</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="dashboard">Dashboard</div>
+    <div class="tab" data-tab="milestones">FIRE Milestones</div>
+    <div class="tab" data-tab="locked-proj">Projections 🔒</div>
+    <div class="tab" data-tab="locked-opt">Optimizer 🔒</div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="section active" id="tab-dashboard">
+    <div class="sh"><div class="sh-title">Overview</div><div class="sh-desc">Your financial independence snapshot — updated in real time</div></div>
+    <div class="cg cg-4">
+      <div class="card glow"><div class="c-lbl">FI Progress</div><div class="c-val gold" id="d-fi">—</div><div class="c-sub">toward FIRE number</div></div>
+      <div class="card"><div class="c-lbl">FIRE Number</div><div class="c-val green" id="d-firen">—</div><div class="c-sub">25× expenses</div></div>
+      <div class="card"><div class="c-lbl">FIRE Age</div><div class="c-val blue" id="d-firea">—</div><div class="c-sub" id="d-firea-sub"></div></div>
+      <div class="card"><div class="c-lbl">Millionaire ETA</div><div class="c-val orange" id="d-mill">—</div><div class="c-sub" id="d-mill-sub"></div></div>
+    </div>
+    <div class="cg cg-3">
+      <div class="card"><div class="c-lbl">Savings Rate</div><div class="c-val gold" id="d-sr">—</div><div class="c-sub">of income</div></div>
+      <div class="card"><div class="c-lbl">Annual Investing</div><div class="c-val" id="d-ainv">—</div><div class="c-sub">savings + 401k + match</div></div>
+      <div class="card"><div class="c-lbl">CoastFIRE Number</div><div class="c-val blue" id="d-coast">—</div><div class="c-sub" id="d-coast-sub">stop contributing now</div></div>
+    </div>
+    <div class="full-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:12px">
+        <div>
+          <div class="c-lbl" style="margin-bottom:4px">Financial Independence Progress</div>
+          <div class="fi-big" id="fi-big-pct">0%</div>
+          <div class="fi-of">of your FIRE number</div>
+        </div>
+        <div style="text-align:right">
+          <div class="c-lbl">CoastFIRE Progress</div>
+          <div style="font-family:'DM Mono',monospace;font-size:22px;color:var(--blue)" id="coast-pct">0%</div>
+          <div style="font-size:10px;color:var(--text3)">of CoastFIRE number</div>
+        </div>
+      </div>
+      <div class="prog-bar" style="height:10px"><div class="prog-fill gold" id="fi-bar" style="width:0%"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:4px"><span>$0</span><span id="firen-label">—</span></div>
+    </div>
+    <div class="two-col">
+      <div class="chart-wrap">
+        <div class="cw-title">Portfolio Growth</div>
+        <div class="cw-sub">Projected path to FIRE</div>
+        <canvas id="growth-chart" height="200"></canvas>
+      </div>
+      <div class="chart-wrap">
+        <div class="cw-title">Milestone Timeline</div>
+        <div class="cw-sub">Key ages on your FIRE journey</div>
+        <div id="dash-milestones" style="padding-top:4px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MILESTONES -->
+  <div class="section" id="tab-milestones">
+    <div class="sh"><div class="sh-title">FIRE Milestones</div><div class="sh-desc">Your four financial independence targets — and when you'll hit each one</div></div>
+    <div class="cg cg-2">
+      <div class="mc coast">
+        <div class="m-badge">CoastFIRE</div>
+        <div class="m-amt" id="m-coast-amt">—</div>
+        <div class="m-desc">The amount needed <em>today</em> so that, without another contribution, compound growth carries you to full FIRE by retirement.</div>
+        <div class="prog-bar"><div class="prog-fill blue" id="m-coast-bar" style="width:0%"></div></div>
+        <div id="m-coast-eta" class="m-eta"></div>
+      </div>
+      <div class="mc lean">
+        <div class="m-badge">LeanFIRE</div>
+        <div class="m-amt" id="m-lean-amt">—</div>
+        <div class="m-desc">Full retirement on your lean budget — covers essentials without frills. A great first freedom milestone.</div>
+        <div class="prog-bar"><div class="prog-fill green" id="m-lean-bar" style="width:0%"></div></div>
+        <div id="m-lean-eta" class="m-eta"></div>
+      </div>
+      <div class="mc fire">
+        <div class="m-badge">FIRE</div>
+        <div class="m-amt" id="m-fire-amt">—</div>
+        <div class="m-desc">Full financial independence on your current lifestyle — the 4% rule applied to your annual expenses.</div>
+        <div class="prog-bar"><div class="prog-fill gold" id="m-fire-bar" style="width:0%"></div></div>
+        <div id="m-fire-eta" class="m-eta"></div>
+      </div>
+      <div class="mc fat">
+        <div class="m-badge">FatFIRE</div>
+        <div class="m-amt" id="m-fat-amt">—</div>
+        <div class="m-desc">Retire at 1.5× your current expenses — travel, luxuries, and generosity without compromise.</div>
+        <div class="prog-bar"><div class="prog-fill purple" id="m-fat-bar" style="width:0%"></div></div>
+        <div id="m-fat-eta" class="m-eta"></div>
+      </div>
+    </div>
+    <div class="full-card" style="margin-top:4px">
+      <div class="c-lbl" style="margin-bottom:10px">Millionaire Milestone</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-family:'DM Mono',monospace;font-size:26px;color:var(--orange)" id="mill-pct">0%</div>
+        <div id="mill-eta" style="font-size:11px;color:var(--text3)"></div>
+      </div>
+      <div class="prog-bar" style="height:8px"><div class="prog-fill orange" id="mill-bar" style="width:0%"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:4px"><span>Current Portfolio</span><span>$1,000,000</span></div>
+    </div>
+  </div>
+
+  <!-- LOCKED: PROJECTIONS -->
+  <div class="section" id="tab-locked-proj">
+    <div class="tab-locked">
+      <div class="tl-icon">📈</div>
+      <div class="tl-title">Projections & Charts</div>
+      <div class="tl-desc">See detailed year-by-year net worth growth, CoastFIRE scenario modeling, contribution breakdowns, and your complete path to FIRE with $1M reference lines.</div>
+      <div class="tl-features">
+        <div class="tl-feat"><span class="tl-feat-icon">✦</span>Net worth + portfolio growth chart</div>
+        <div class="tl-feat"><span class="tl-feat-icon">✦</span>FIRE & $1M reference lines</div>
+        <div class="tl-feat"><span class="tl-feat-icon">✦</span>CoastFIRE "stop now" scenario</div>
+        <div class="tl-feat"><span class="tl-feat-icon">✦</span>Contribution breakdown chart</div>
+        <div class="tl-feat"><span class="tl-feat-icon">✦</span>Home equity projection</div>
+        <div class="tl-feat"><span class="tl-feat-icon">✦</span>Mortgage paydown tracking</div>
+      </div>
+      <a href="YOUR_GUMROAD_OR_ETSY_LINK_HERE" target="_blank" class="tl-btn">Unlock Full Version — $9</a>
+      <div class="tl-price">One-time purchase · Instant download · No subscription</div>
+    </div>
+  </div>
+
+  <!-- LOCKED: OPTIMIZER -->
+  <div class="section" id="tab-locked-opt">
+    <div class="tab-locked">
+      <div class="tl-icon">⚡</div>
+      <div class="tl-title">FIRE Optimizer</div>
+      <div class="tl-desc">Drag levers to instantly see how changes to your savings rate, 401(k) contributions, and investment return affect your FIRE date. Compare 7 scenarios side by side.</div>
+      <div class="tl-features">
+        <div class="tl-feat"><span class="tl-feat-icon">✦</span>Savings rate FIRE date impact</div>
+        <div class="tl-feat"><span class="tl-feat-icon">✦</span>401k contribution lever</div>
+        <div class="tl-feat"><span class="tl-feat-icon">✦</span>Return rate explorer (5–10%)</div>
+        <div class="tl-feat"><span class="tl-feat-icon">✦</span>7-scenario comparison table</div>
+        <div class="tl-feat"><span class="tl-feat-icon">✦</span>Part-time work freedom grid</div>
+        <div class="tl-feat"><span class="tl-feat-icon">✦</span>Net worth breakdown tracker</div>
+      </div>
+      <a href="YOUR_GUMROAD_OR_ETSY_LINK_HERE" target="_blank" class="tl-btn">Unlock Full Version — $9</a>
+      <div class="tl-price">One-time purchase · Instant download · No subscription</div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script>
+// Utility
+const fmt = (n, dec=0) => n==null ? '—' : '$' + Math.round(n).toLocaleString();
+const fmtK = n => {
+  if(n >= 1e6) return '$' + (n/1e6).toFixed(1) + 'M';
+  if(n >= 1e3) return '$' + (n/1e3).toFixed(0) + 'K';
+  return '$' + Math.round(n);
+};
+const pct = (a,b) => b ? Math.min(100, (a/b)*100).toFixed(1)+'%' : '0%';
+const pctNum = (a,b) => b ? Math.min(100, (a/b)*100) : 0;
+const cl = id => document.getElementById(id);
+
+// Inputs
+const inputs = ['i-age','i-ret','i-income','i-exp','i-lean','i-port','i-save'];
+inputs.forEach(id => cl(id)?.addEventListener('input', calc));
+
+// Range inputs
+const ranges = [
+  {r:'i-401pct', d:'rv-401pct', s:'%'},
+  {r:'i-match',  d:'rv-match',  s:'%'},
+  {r:'i-ret2',   d:'rv-ret2',   s:'%'},
+  {r:'i-inf',    d:'rv-inf',    s:'%'},
+];
+ranges.forEach(({r,d,s}) => {
+  const el = cl(r);
+  if(!el) return;
+  el.addEventListener('input', () => { cl(d).textContent = el.value + s; calc(); });
+});
+
+// Tabs
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    cl('tab-' + t.dataset.tab)?.classList.add('active');
+  });
+});
+
+let growthChart = null;
+
+function calc() {
+  const age    = +cl('i-age').value || 28;
+  const retAge = +cl('i-ret').value || 65;
+  const income = +cl('i-income').value || 90000;
+  const exp    = +cl('i-exp').value || 52000;
+  const lean   = +cl('i-lean').value || 36000;
+  const port   = +cl('i-port').value || 69000;
+  const save   = +cl('i-save').value || 15000;
+  const c401   = +cl('i-401pct').value || 6;
+  const match  = +cl('i-match').value || 3;
+  const ret    = (+cl('i-ret2').value || 7) / 100;
+  const inf    = (+cl('i-inf').value || 3) / 100;
+
+  const yrs       = Math.max(0, retAge - age);
+  const contrib401 = income * (c401 / 100);
+  const matchAmt  = income * (match / 100);
+  const annInvest = save + contrib401 + matchAmt;
+  const sr        = (annInvest / income) * 100;
+
+  // FIRE numbers
+  const fireN  = exp * 25;
+  const leanN  = lean * 25;
+  const fatN   = exp * 1.5 * 25;
+  const coastN = fireN / Math.pow(1 + ret, yrs);
+
+  // FI progress
+  const fiPct  = pctNum(port, fireN);
+  const cPct   = pctNum(port, coastN);
+
+  // Header
+  cl('h-fire').textContent = fmtK(fireN);
+
+  // Dashboard cards
+  cl('d-fi').textContent   = fiPct.toFixed(1) + '%';
+  cl('d-firen').textContent = fmtK(fireN);
+  cl('d-sr').textContent   = sr.toFixed(1) + '%';
+  cl('d-ainv').textContent = fmtK(annInvest);
+  cl('d-coast').textContent = fmtK(coastN);
+
+  // FI bar
+  cl('fi-big-pct').textContent = fiPct.toFixed(1) + '%';
+  cl('fi-bar').style.width     = Math.min(100, fiPct) + '%';
+  cl('firen-label').textContent = fmtK(fireN);
+  cl('coast-pct').textContent  = cPct.toFixed(1) + '%';
+
+  // Year-by-year projection
+  const maxYrs = Math.min(yrs + 5, 50);
+  let p = port;
+  let fireAge = null, millAge = null, coastAge = null, leanAge = null, fatAge = null;
+  const chartYrs = [], chartPort = [], chartFire = [];
+  for(let y = 0; y <= maxYrs; y++) {
+    chartYrs.push(age + y);
+    chartPort.push(Math.round(p));
+    chartFire.push(Math.round(fireN));
+    const curAge = age + y;
+    const remYrs = Math.max(0, retAge - curAge);
+    const cn = fireN / Math.pow(1 + ret, remYrs);
+    if(!coastAge && p >= cn) coastAge = curAge;
+    if(!leanAge && p >= leanN) leanAge = curAge;
+    if(!fireAge && p >= fireN) fireAge = curAge;
+    if(!fatAge && p >= fatN) fatAge = curAge;
+    if(!millAge && p >= 1e6) millAge = curAge;
+    p = p * (1 + ret) + annInvest;
+  }
+
+  // FIRE age display
+  if(fireAge) {
+    cl('d-firea').textContent = 'Age ' + fireAge;
+    cl('d-firea-sub').textContent = 'in ' + (fireAge - age) + ' years';
+  } else {
+    cl('d-firea').textContent = '>Age ' + (age + maxYrs);
+    cl('d-firea-sub').textContent = 'extend timeline';
+  }
+
+  // Millionaire ETA
+  if(millAge) {
+    cl('d-mill').textContent = 'Age ' + millAge;
+    cl('d-mill-sub').textContent = 'in ' + (millAge - age) + ' years';
+  } else {
+    cl('d-mill').textContent = port >= 1e6 ? '✓ Achieved' : '>Age ' + (age + maxYrs);
+    cl('d-mill-sub').textContent = port >= 1e6 ? 'You\'re a millionaire!' : '';
+  }
+
+  // Milestone timeline
+  const miles = [
+    { label: 'CoastFIRE', age: coastAge, color: 'var(--blue)' },
+    { label: 'LeanFIRE',  age: leanAge,  color: 'var(--green)' },
+    { label: 'Millionaire', age: millAge, color: 'var(--orange)' },
+    { label: 'FIRE',      age: fireAge,  color: 'var(--gold)' },
+    { label: 'FatFIRE',   age: fatAge,   color: 'var(--purple)' },
+  ];
+  cl('dash-milestones').innerHTML = miles.map(m => `
+    <div class="mile-item">
+      <div class="mile-dot" style="background:${m.color}"></div>
+      <div class="mile-info">
+        <div class="mile-label">${m.label}</div>
+      </div>
+      <div>
+        <div class="mile-age" style="color:${m.color}">${m.age ? 'Age ' + m.age : 'Beyond range'}</div>
+        <div class="mile-yr">${m.age ? 'in ' + (m.age - age) + ' yrs' : ''}</div>
+      </div>
+    </div>
+  `).join('');
+
+  // Chart
+  const ctx = cl('growth-chart').getContext('2d');
+  if(growthChart) growthChart.destroy();
+  growthChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: chartYrs,
+      datasets: [
+        {
+          label: 'Portfolio',
+          data: chartPort,
+          borderColor: '#52c78a',
+          backgroundColor: 'rgba(82,199,138,0.08)',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 0,
+          borderWidth: 2
+        },
+        {
+          label: 'FIRE Number',
+          data: chartFire,
+          borderColor: 'rgba(201,168,76,0.5)',
+          borderDash: [6,4],
+          fill: false,
+          tension: 0,
+          pointRadius: 0,
+          borderWidth: 1.5
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#7e7e92', font: { size: 10, family: 'Outfit' }, boxWidth: 14, padding: 16 } },
+        tooltip: {
+          backgroundColor: '#15151e',
+          borderColor: '#21212e',
+          borderWidth: 1,
+          titleColor: '#ede8e0',
+          bodyColor: '#7e7e92',
+          callbacks: {
+            title: ctx => 'Age ' + ctx[0].label,
+            label: ctx => ' ' + ctx.dataset.label + ': $' + Math.round(ctx.raw).toLocaleString()
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { color: '#4a4a5a', font: { size: 9 }, maxTicksLimit: 8 }, grid: { color: 'rgba(33,33,46,0.8)' } },
+        y: { ticks: { color: '#4a4a5a', font: { size: 9 }, callback: v => '$' + (v>=1e6 ? (v/1e6).toFixed(1)+'M' : (v/1e3).toFixed(0)+'K') }, grid: { color: 'rgba(33,33,46,0.5)' } }
+      }
+    }
+  });
+
+  // --- MILESTONES TAB ---
+  const etaStr = (a) => a ? `<strong>Age ${a}</strong> · in ${a - age} year${a-age!==1?'s':''}` : 'Beyond projection range';
+  const alreadyStr = '<span class="achieved-tag">✓ Achieved</span>';
+
+  // CoastFIRE
+  cl('m-coast-amt').textContent = fmtK(coastN);
+  cl('m-coast-bar').style.width = Math.min(100, cPct) + '%';
+  cl('m-coast-eta').innerHTML = port >= coastN ? alreadyStr : `<span class="m-eta">Target: ${etaStr(coastAge)}</span>`;
+
+  // LeanFIRE
+  const leanPct = pctNum(port, leanN);
+  cl('m-lean-amt').textContent = fmtK(leanN);
+  cl('m-lean-bar').style.width = Math.min(100, leanPct) + '%';
+  cl('m-lean-eta').innerHTML = port >= leanN ? alreadyStr : `<span class="m-eta">Target: ${etaStr(leanAge)}</span>`;
+
+  // FIRE
+  cl('m-fire-amt').textContent = fmtK(fireN);
+  cl('m-fire-bar').style.width = Math.min(100, fiPct) + '%';
+  cl('m-fire-eta').innerHTML = port >= fireN ? alreadyStr : `<span class="m-eta">Target: ${etaStr(fireAge)}</span>`;
+
+  // FatFIRE
+  const fatPct = pctNum(port, fatN);
+  cl('m-fat-amt').textContent = fmtK(fatN);
+  cl('m-fat-bar').style.width = Math.min(100, fatPct) + '%';
+  cl('m-fat-eta').innerHTML = port >= fatN ? alreadyStr : `<span class="m-eta">Target: ${etaStr(fatAge)}</span>`;
+
+  // Millionaire bar
+  const mPct = pctNum(port, 1e6);
+  cl('mill-pct').textContent = mPct.toFixed(1) + '%';
+  cl('mill-bar').style.width = Math.min(100, mPct) + '%';
+  cl('mill-eta').innerHTML = port >= 1e6 ? '<span class="achieved-tag">✓ Millionaire!</span>' : (millAge ? `Age ${millAge} · in ${millAge - age} years` : 'Beyond range');
+}
+
+calc();
+</script>
+</body>
+</html>
