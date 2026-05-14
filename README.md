@@ -9,4 +9,4 @@ and your path to $1M — all in one free tool.
 Want the full version? Includes net worth tracker, home equity, mortgage 
 analysis, optimizer, and 7-scenario comparison.
 
-[Get the Full Version →]([YOUR_PURCHASE_LINK](https://shelbyroeder.gumroad.com/l/qbimf))
+[Get the Full Version →]((https://shelbyroeder.gumroad.com/l/qbimf))
